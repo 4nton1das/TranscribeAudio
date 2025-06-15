@@ -43,7 +43,7 @@
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/your-username/TranscribeAudio.git
+git clone https://github.com/4nton1das/TranscribeAudio.git
 cd TranscribeAudio
 ```
 
