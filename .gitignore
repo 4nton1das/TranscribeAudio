@@ -1,0 +1,5 @@
+tts_output
+output_audio.wav
+.env
+.venv
+.idea

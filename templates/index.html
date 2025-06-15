@@ -1,0 +1,553 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASR Транскрибация | Курсовая</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .card { border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .info-icon { cursor: pointer; color: #0d6efd; }
+        .model-table th { background-color: #f8f9fa; }
+        .model-badge { font-size: 0.85rem; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h1 class="h4 mb-0">Транскрибация аудио/видео</h1>
+                    </div>
+
+                    <div class="card-body">
+                        <!-- Статус системы -->
+                        <div class="d-flex justify-content-between mb-4">
+                            <span class="badge bg-{{ 'success' if gpu_available else 'warning' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-gpu-card" viewBox="0 0 16 16">
+                                  <path d="M4 8a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0m7.5-1.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3"/>
+                                  <path d="M0 1.5A.5.5 0 0 1 .5 1h1a.5.5 0 0 1 .5.5V4h13.5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5H2v2.5a.5.5 0 0 1-1 0V2H.5a.5.5 0 0 1-.5-.5m5.5 4a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M9 8a2.5 2.5 0 1 0 5 0 2.5 2.5 0 0 0-5 0"/>
+                                  <path d="M3 12.5h3.5v1a.5.5 0 0 1-.5.5H3.5a.5.5 0 0 1-.5-.5zm4 1v-1h4v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5"/>
+                                </svg>
+                                {{ 'CUDA доступно' if gpu_available else 'Только CPU' }}
+                            </span>
+                            <span class="badge bg-info" id="currentModelBadge">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-openai" viewBox="0 0 16 16">
+                                  <path d="M14.949 6.547a3.94 3.94 0 0 0-.348-3.273 4.11 4.11 0 0 0-4.4-1.934A4.1 4.1 0 0 0 8.423.2 4.15 4.15 0 0 0 6.305.086a4.1 4.1 0 0 0-1.891.948 4.04 4.04 0 0 0-1.158 1.753 4.1 4.1 0 0 0-1.563.679A4 4 0 0 0 .554 4.72a3.99 3.99 0 0 0 .502 4.731 3.94 3.94 0 0 0 .346 3.274 4.11 4.11 0 0 0 4.402 1.933c.382.425.852.764 1.377.995.526.231 1.095.35 1.67.346 1.78.002 3.358-1.132 3.901-2.804a4.1 4.1 0 0 0 1.563-.68 4 4 0 0 0 1.14-1.253 3.99 3.99 0 0 0-.506-4.716m-6.097 8.406a3.05 3.05 0 0 1-1.945-.694l.096-.054 3.23-1.838a.53.53 0 0 0 .265-.455v-4.49l1.366.778q.02.011.025.035v3.722c-.003 1.653-1.361 2.992-3.037 2.996m-6.53-2.75a2.95 2.95 0 0 1-.36-2.01l.095.057L5.29 12.09a.53.53 0 0 0 .527 0l3.949-2.246v1.555a.05.05 0 0 1-.022.041L6.473 13.3c-1.454.826-3.311.335-4.15-1.098m-.85-6.94A3.02 3.02 0 0 1 3.07 3.949v3.785a.51.51 0 0 0 .262.451l3.93 2.237-1.366.779a.05.05 0 0 1-.048 0L2.585 9.342a2.98 2.98 0 0 1-1.113-4.094zm11.216 2.571L8.747 5.576l1.362-.776a.05.05 0 0 1 .048 0l3.265 1.86a3 3 0 0 1 1.173 1.207 2.96 2.96 0 0 1-.27 3.2 3.05 3.05 0 0 1-1.36.997V8.279a.52.52 0 0 0-.276-.445m1.36-2.015-.097-.057-3.226-1.855a.53.53 0 0 0-.53 0L6.249 6.153V4.598a.04.04 0 0 1 .019-.04L9.533 2.7a3.07 3.07 0 0 1 3.257.139c.474.325.843.778 1.066 1.303.223.526.289 1.103.191 1.664zM5.503 8.575 4.139 7.8a.05.05 0 0 1-.026-.037V4.049c0-.57.166-1.127.476-1.607s.752-.864 1.275-1.105a3.08 3.08 0 0 1 3.234.41l-.096.054-3.23 1.838a.53.53 0 0 0-.265.455zm.742-1.577 1.758-1 1.762 1v2l-1.755 1-1.762-1z"/>
+                                </svg>
+                                Текущая модель: {{ current_model|upper }}
+                            </span>
+                        </div>
+
+                        <!-- Форма загрузки -->
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="fileInput" class="form-label">Выберите аудио/видео файл:</label>
+                                <input class="form-control" type="file" id="fileInput" name="file" required>
+                                <div class="form-text">
+                                    Поддерживаемые форматы: MP3, WAV, MP4, AVI (до 2 ГБ)
+                                </div>
+                            </div>
+
+                            <!-- Выбор модели -->
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    Выберите модель ASR:
+                                    <i class="bi bi-info-circle info-icon"
+                                       data-bs-toggle="modal"
+                                       data-bs-target="#modelInfoModal"></i>
+                                </label>
+                                <select class="form-select" name="model" id="modelSelect">
+                                    {% for model_name in model_info %}
+                                    <option value="{{ model_name }}"
+                                        {% if model_name == current_model %}selected{% endif %}>
+                                        {{ model_name|upper }}
+                                        <span class="model-badge badge bg-secondary">
+                                            {{ model_info[model_name].quality }}
+                                        </span>
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    <span id="modelStats">
+                                        {{ model_info[current_model].params }} параметров,
+                                        {{ model_info[current_model].vram }} VRAM,
+                                        Скорость: {{ model_info[current_model].speed }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Язык аудио (необязательно):</label>
+                                <select class="form-select" name="language" id="languageSelect">
+                                    <option value="">Автоопределение</option>
+                                    {% for code, name in languages.items() %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Выберите язык, если хотите повысить точность распознавания
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Задача:</label>
+                                <select class="form-select" name="task" id="taskSelect">
+                                    {% for task_id, task_name in tasks.items() %}
+                                    <option value="{{ task_id }}">{{ task_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3" id="targetLanguageWrapper" style="display: none;">
+                                <label class="form-label">Целевой язык перевода:</label>
+                                <select class="form-select" name="target_language" id="targetLanguageSelect">
+                                    {% for code, name in languages.items() %}
+                                    <option value="{{ code }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+                                <span id="buttonText">Транскрибировать</span>
+                                <div id="spinner" class="spinner-border spinner-border-sm ms-2 d-none"></div>
+                            </button>
+                        </form>
+
+                        <!-- Индикатор обработки -->
+                        <div class="mt-4 d-none" id="processingIndicator">
+                            <div class="d-flex justify-content-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                                <span class="ms-3">Идет обработка файла...</span>
+                            </div>
+                            <div class="text-center text-muted small mt-2">
+                                <i class="bi bi-info-circle"></i>
+                                Время обработки зависит от длины файла и выбранной модели
+                            </div>
+                        </div>
+
+                        <!-- Результат -->
+                        <div class="mt-4 d-none" id="resultSection">
+                            <h3 class="h5">Результат:</h3>
+
+                            <!-- Блок транскрипции -->
+                            <div class="alert alert-success mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <small id="filenameLabel" class="text-muted"></small>
+                                    <span class="badge bg-info" id="modelUsedBadge">
+                                        {{ current_model|upper }}
+                                    </span>
+                                </div>
+                                <div class="overflow-auto border rounded p-2 bg-light"
+                                     style="max-height: 300px; white-space: pre-wrap;"
+                                     id="transcriptResult"></div>
+                                <div id="processingInfo" class="text-muted text-end small mt-2"></div>
+                            </div>
+
+                            <!-- Блок обработанного текста (LLM) -->
+                            <div id="processedSection" class="d-none">
+                                <h4 class="h6">Обработанный текст (<span id="taskName"></span>):</h4>
+                                <div class="alert alert-info p-0">
+                                    <div class="overflow-auto border rounded p-2 bg-light"
+                                         style="max-height: 300px; white-space: pre-wrap;"
+                                         id="processedResult"></div>
+                                </div>
+                            </div>
+
+                            <button id="copyBtn" class="btn btn-sm btn-outline-secondary me-2">
+                                <i class="bi bi-clipboard"></i> Скопировать транскрипт
+                            </button>
+                            <button id="copyProcessedBtn" class="btn btn-sm btn-outline-secondary d-none">
+                                <i class="bi bi-clipboard"></i> Скопировать результат
+                            </button>
+                        </div>
+
+                        <!-- Ошибка -->
+                        <div class="alert alert-danger mt-4 d-none" id="errorAlert"></div>
+                    </div>
+
+                    <div class="card-footer text-center text-muted">
+                        <small>ASR система на базе OpenAI Whisper</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TTS Block -->
+    <div class="container py-3">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h2 class="h5 mb-0">Преобразование текста в речь (TTS)</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="ttsForm">
+                            <div class="mb-3">
+                                <label for="ttsText" class="form-label">Введите текст для озвучивания:</label>
+                                <textarea class="form-control" id="ttsText" rows="3" required></textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Язык:</label>
+                                    <select class="form-select" id="ttsLanguage">
+                                        <option value="ru">Русский</option>
+                                        <option value="en">Английский</option>
+                                    </select>
+                                    <div class="form-text">
+                                        Должен соответствовать языку текста для озвучивания
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Голос:</label>
+                                    <select class="form-select" id="ttsSpeaker">
+                                        <!-- Опции будут заполнены динамически -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100">
+                                <span id="ttsButtonText">Озвучить</span>
+                                <div id="ttsSpinner" class="spinner-border spinner-border-sm ms-2 d-none"></div>
+                            </button>
+                        </form>
+
+                        <div class="mt-3 d-none" id="ttsResult">
+                            <div class="alert alert-success d-flex justify-content-between align-items-center">
+                                <span>Аудиофайл готов!</span>
+                                <a id="ttsDownloadLink" class="btn btn-sm btn-outline-success" download>
+                                    <i class="bi bi-download me-1"></i> Скачать
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-danger mt-3 d-none" id="ttsError"></div>
+                    </div>
+
+                    <div class="card-footer text-center text-muted">
+                        <small>TTS система на базе Silero</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно с информацией о моделях -->
+    <div class="modal fade" id="modelInfoModal" tabindex="-1" aria-labelledby="modelInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modelInfoModalLabel">
+                        <i class="bi bi-info-circle"></i> Характеристики моделей Whisper
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Как выбрать модель?</strong>
+                        Большие модели дают лучшую точность распознавания, но требуют больше ресурсов и работают медленнее.
+                        Для большинства задач подходят модели Small или Medium.
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered model-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Модель</th>
+                                    <th>Параметры</th>
+                                    <th>Требуемая VRAM</th>
+                                    <th>Относительная скорость</th>
+                                    <th>Качество</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model_name, info in model_info.items() %}
+                                <tr {% if model_name == current_model %}class="table-primary" {% endif %}>
+                                    <td><strong>{{ model_name|upper }}</strong></td>
+                                    <td>{{ info.params }}</td>
+                                    <td>{{ info.vram }}</td>
+                                    <td>{{ info.speed }}</td>
+                                    <td>{{ info.quality }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Важно:</strong> Модель Large требует около 10GB VRAM. Убедитесь, что ваша видеокарта
+                        поддерживает такие требования, прежде чем выбирать эту модель.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Обработчик изменения выбора модели
+        document.getElementById('modelSelect').addEventListener('change', function() {
+            const selectedModel = this.value.toUpperCase();
+
+            // Обновляем бейдж с текущей моделью
+            document.getElementById('currentModelBadge').innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-openai" viewBox="0 0 16 16">
+                  <path d="M14.949 6.547a3.94 3.94 0 0 0-.348-3.273 4.11 4.11 0 0 0-4.4-1.934A4.1 4.1 0 0 0 8.423.2 4.15 4.15 0 0 0 6.305.086a4.1 4.1 0 0 0-1.891.948 4.04 4.04 0 0 0-1.158 1.753 4.1 4.1 0 0 0-1.563.679A4 4 0 0 0 .554 4.72a3.99 3.99 0 0 0 .502 4.731 3.94 3.94 0 0 0 .346 3.274 4.11 4.11 0 0 0 4.402 1.933c.382.425.852.764 1.377.995.526.231 1.095.35 1.67.346 1.78.002 3.358-1.132 3.901-2.804a4.1 4.1 0 0 0 1.563-.68 4 4 0 0 0 1.14-1.253 3.99 3.99 0 0 0-.506-4.716m-6.097 8.406a3.05 3.05 0 0 1-1.945-.694l.096-.054 3.23-1.838a.53.53 0 0 0 .265-.455v-4.49l1.366.778q.02.011.025.035v3.722c-.003 1.653-1.361 2.992-3.037 2.996m-6.53-2.75a2.95 2.95 0 0 1-.36-2.01l.095.057L5.29 12.09a.53.53 0 0 0 .527 0l3.949-2.246v1.555a.05.05 0 0 1-.022.041L6.473 13.3c-1.454.826-3.311.335-4.15-1.098m-.85-6.94A3.02 3.02 0 0 1 3.07 3.949v3.785a.51.51 0 0 0 .262.451l3.93 2.237-1.366.779a.05.05 0 0 1-.048 0L2.585 9.342a2.98 2.98 0 0 1-1.113-4.094zm11.216 2.571L8.747 5.576l1.362-.776a.05.05 0 0 1 .048 0l3.265 1.86a3 3 0 0 1 1.173 1.207 2.96 2.96 0 0 1-.27 3.2 3.05 3.05 0 0 1-1.36.997V8.279a.52.52 0 0 0-.276-.445m1.36-2.015-.097-.057-3.226-1.855a.53.53 0 0 0-.53 0L6.249 6.153V4.598a.04.04 0 0 1 .019-.04L9.533 2.7a3.07 3.07 0 0 1 3.257.139c.474.325.843.778 1.066 1.303.223.526.289 1.103.191 1.664zM5.503 8.575 4.139 7.8a.05.05 0 0 1-.026-.037V4.049c0-.57.166-1.127.476-1.607s.752-.864 1.275-1.105a3.08 3.08 0 0 1 3.234.41l-.096.054-3.23 1.838a.53.53 0 0 0-.265.455zm.742-1.577 1.758-1 1.762 1v2l-1.755 1-1.762-1z"/>
+                </svg>
+                Текущая модель: ${selectedModel}
+            `;
+
+            // Обновляем информацию о характеристиках модели
+            const modelInfo = {{ model_info|tojson }};
+            if (modelInfo[this.value]) {
+                const info = modelInfo[this.value];
+                document.getElementById('modelStats').textContent =
+                    `${info.params} параметров, ${info.vram} VRAM, Скорость: ${info.speed}`;
+            }
+
+            const tableRows = document.querySelectorAll('tbody tr');
+
+            tableRows.forEach(row => {
+                row.classList.remove('table-primary');
+            });
+
+            tableRows.forEach(row => {
+                const modelNameCell = row.querySelector('td:first-child strong');
+                if (modelNameCell && modelNameCell.textContent === selectedModel) {
+                    row.classList.add('table-primary');
+                }
+            });
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('fileInput');
+            const submitBtn = document.getElementById('submitBtn');
+            const buttonText = document.getElementById('buttonText');
+            const spinner = document.getElementById('spinner');
+            const processingIndicator = document.getElementById('processingIndicator');
+            const resultSection = document.getElementById('resultSection');
+            const errorAlert = document.getElementById('errorAlert');
+            const modelSelect = document.getElementById('modelSelect');
+
+            // Сброс состояния
+            errorAlert.classList.add('d-none');
+            resultSection.classList.add('d-none');
+
+            // Показать индикатор обработки
+            submitBtn.disabled = true;
+            spinner.classList.remove('d-none');
+            buttonText.textContent = 'Обработка...';
+            processingIndicator.classList.remove('d-none');
+
+            try {
+                // Отправка файла и выбранной модели
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('model', modelSelect.value);
+                formData.append('language', document.getElementById('languageSelect').value);
+
+                // Добавляем параметры задачи и языка
+                const task = document.getElementById('taskSelect').value;
+                formData.append('task', task);
+
+                // Добавляем целевой язык только если задача - перевод
+                if (task === 'translate') {
+                    const targetLanguage = document.getElementById('targetLanguageSelect').value;
+                    formData.append('target_language', targetLanguage);
+                }
+
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Ошибка сервера');
+                }
+
+                // Показать результат
+                document.getElementById('filenameLabel').textContent = data.filename;
+                document.getElementById('transcriptResult').textContent = data.transcript;
+                document.getElementById('modelUsedBadge').textContent = data.model_used.toUpperCase();
+
+                // Отображаем обработанный текст если есть
+                const processedSection = document.getElementById('processedSection');
+                const copyProcessedBtn = document.getElementById('copyProcessedBtn');
+
+                if (data.processed_text) {
+                    document.getElementById('processedResult').textContent = data.processed_text;
+                    document.getElementById('taskName').textContent =
+                        document.querySelector(`#taskSelect option[value="${data.task}"]`).textContent;
+                    processedSection.classList.remove('d-none');
+                    copyProcessedBtn.classList.remove('d-none');
+                } else {
+                    processedSection.classList.add('d-none');
+                    copyProcessedBtn.classList.add('d-none');
+                }
+
+                document.getElementById('processingInfo').innerHTML = `
+                    ASR: ${data.asr_time} сек. |
+                    LLM: ${data.llm_time} сек. |
+                    Модель: ${data.model_used.toUpperCase()} |
+                    Язык: ${data.detected_language}
+                `;
+                resultSection.classList.remove('d-none');
+
+            } catch (error) {
+                errorAlert.textContent = `Ошибка: ${error.message}`;
+                errorAlert.classList.remove('d-none');
+            } finally {
+                // Восстановить UI
+                submitBtn.disabled = false;
+                spinner.classList.add('d-none');
+                buttonText.textContent = 'Транскрибировать';
+                processingIndicator.classList.add('d-none');
+            }
+        });
+
+        // Показывать выбор языка только для задачи перевода
+        document.getElementById('taskSelect').addEventListener('change', function() {
+            const targetLangWrapper = document.getElementById('targetLanguageWrapper');
+            if (this.value === 'translate') {
+                targetLangWrapper.style.display = 'block';
+            } else {
+                targetLangWrapper.style.display = 'none';
+            }
+        });
+
+        // Копирование текста
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const text = document.getElementById('transcriptResult').textContent;
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    const btn = document.getElementById('copyBtn');
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="bi bi-check2"></i> Скопировано!';
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                    }, 2000);
+                })
+                .catch(err => console.error('Ошибка копирования:', err));
+        });
+
+        // Кнопка копирования обработанного текста
+        document.getElementById('copyProcessedBtn').addEventListener('click', () => {
+            const text = document.getElementById('processedResult').textContent;
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    const btn = document.getElementById('copyProcessedBtn');
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="bi bi-check2"></i> Скопировано!';
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                    }, 2000);
+                });
+        });
+
+        // Загрузка конфигурации TTS
+        let ttsConfig = {};
+
+        async function loadTtsConfig() {
+            try {
+                const response = await fetch('/tts_config');
+                ttsConfig = await response.json();
+                updateSpeakerOptions();
+            } catch (error) {
+                console.error("Ошибка загрузки конфигурации TTS:", error);
+            }
+        }
+
+        // Обновление списка голосов при изменении языка
+        function updateSpeakerOptions() {
+            const language = document.getElementById('ttsLanguage').value;
+            const speakerSelect = document.getElementById('ttsSpeaker');
+
+            speakerSelect.innerHTML = '';
+
+            if (ttsConfig[language]) {
+                const speakers = ttsConfig[language].speaker_names;
+                for (const [id, name] of Object.entries(speakers)) {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = name;
+                    speakerSelect.appendChild(option);
+                }
+            }
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTtsConfig();
+            document.getElementById('ttsLanguage').addEventListener('change', updateSpeakerOptions);
+        });
+
+        // Обработчик для TTS формы
+        document.getElementById('ttsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const text = document.getElementById('ttsText').value;
+            const language = document.getElementById('ttsLanguage').value;
+            const speaker = document.getElementById('ttsSpeaker').value;
+            const ttsButton = document.querySelector('#ttsForm button[type="submit"]');
+            const ttsSpinner = document.getElementById('ttsSpinner');
+            const ttsButtonText = document.getElementById('ttsButtonText');
+            const ttsResult = document.getElementById('ttsResult');
+            const ttsError = document.getElementById('ttsError');
+            const ttsDownloadLink = document.getElementById('ttsDownloadLink');
+
+            // Сброс предыдущих результатов
+            ttsResult.classList.add('d-none');
+            ttsError.classList.add('d-none');
+
+            // Показать спиннер
+            ttsButton.disabled = true;
+            ttsButtonText.textContent = 'Обработка...';
+            ttsSpinner.classList.remove('d-none');
+
+            try {
+                const response = await fetch('/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text, language, speaker })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Ошибка генерации аудио');
+                }
+
+                // Показать ссылку для скачивания
+                ttsDownloadLink.href = data.audio_url;
+                ttsDownloadLink.download = data.filename;
+                ttsResult.classList.remove('d-none');
+            } catch (error) {
+                ttsError.textContent = `Ошибка: ${error.message}`;
+                ttsError.classList.remove('d-none');
+            } finally {
+                ttsButton.disabled = false;
+                ttsButtonText.textContent = 'Озвучить';
+                ttsSpinner.classList.add('d-none');
+            }
+        });
+    </script>
+</body>
+</html>
