@@ -1,4 +1,4 @@
-# README: Веб-приложение для транскрибации и обработки речи
+# Веб-приложение для транскрибации и обработки речи
 
 ## Описание проекта
 Веб-приложение для комплексной работы с речью, включающее:
@@ -43,7 +43,7 @@
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/your-username/TranscribeAudio.git
+git clone https://github.com/4nton1das/TranscribeAudio.git
 cd TranscribeAudio
 ```
 
